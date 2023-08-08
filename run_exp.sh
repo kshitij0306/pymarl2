@@ -21,6 +21,7 @@ threads=${4:-1} # 2
 td_lambdas=${9:-0.4}
 eps_anneals=${10:-100000}
 args=${5:-}    # ""
+gpus=${11:-0,1,2,3,4,5,6,7}
 times=${7:-3}  # could change to 1 and only run 1 seed for each unit type as well
 
 maps=(${maps//,/ })
@@ -28,6 +29,7 @@ units=(${units//,/ })
 args=(${args//,/ })
 td_lambdas=(${td_lambdas//,/ })
 eps_anneals=(${eps_anneals//,/ })
+gpus=(${gpus//,/ })
 
 if [ ! $config ] || [ ! $tag ]; then
     echo "Please enter the correct command."
@@ -43,7 +45,8 @@ for tdlambda in "${td_lambdas[@]}"; do
             for unit in "${units[@]}"; do
                 for((i=0;i<times;i++)); do
                     group="${config}-${map}-${tag}"
-                    $debug ./run_docker.sh $gpu python3 src/main.py --config="$config" --env-config="$map" with group="$group" env_args.capability_config.n_units=$unit env_args.capability_config.start_positions.n_enemies=$unit use_wandb=True td_lambda=$tdlambda epsilon_anneal_time=$epsanneal save_model=True "${args[@]}"
+                    gpu=${gpus[$(($count % ${#gpus[@]}))]}
+                    $debug ./run_docker.sh $gpu python3 src/main.py --config="$config" --env-config="$map" with group="$group" env_args.capability_config.n_units=$unit env_args.capability_config.n_enemies=$unit use_wandb=True td_lambda=$tdlambda epsilon_anneal_time=$epsanneal save_model=True "${args[@]}" &
 
                     count=$(($count + 1))
                     if [ $(($count % $threads)) -eq 0 ]; then
